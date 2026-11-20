@@ -17,7 +17,7 @@ from encoder import (
     target_options,
 )
 from imitation_model import load_policy
-from sandbox.crane import paths, tile, units
+from sandbox.crane import paths, tile, units, zone
 from sandbox.env.skirmish_crane.tile_types import TILE_TYPES
 
 
@@ -39,6 +39,34 @@ def _preferred_moves(observation, moves):
     own = observation["observation"]["self"]
     kind = own["type"]
     if kind == "cavalry":
+        zones = zone.zones(observation)
+        if zones:
+            current_zone = zone.at(observation, own["position"])
+            if current_zone is not None:
+                return [
+                    index
+                    for index, (_, end) in enumerate(moves)
+                    if end == own["position"]
+                ]
+
+            target = min(
+                zones,
+                key=lambda area: min(
+                    tile.distance(own["position"], spot) for spot in area["tiles"]
+                ),
+            )
+            distances = [
+                min(tile.distance(end, spot) for spot in target["tiles"]) for _, end in moves
+            ]
+            closest = min(distances)
+            advancing = [index for index, distance in enumerate(distances) if distance == closest]
+            longest = max(len(paths.decode(moves[index][0])) for index in advancing)
+            return [
+                index
+                for index in advancing
+                if len(paths.decode(moves[index][0])) == longest
+            ]
+
         longest = max(len(paths.decode(path)) for path, _ in moves)
         return [index for index, (path, _) in enumerate(moves) if len(paths.decode(path)) == longest]
 

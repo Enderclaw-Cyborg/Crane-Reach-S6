@@ -194,6 +194,20 @@ def test_cavalry_uses_its_longest_legal_move():
     assert action["path"] == 8
 
 
+def test_cavalry_beelines_for_nearest_capture_zone():
+    observation = sample_observation(kind="cavalry")
+    observation["observation"]["battlefield"]["zones"] = [
+        {
+            "center": {"q": 4, "r": 2},
+            "tiles": [{"q": 4, "r": 2}, {"q": 4, "r": 1}],
+        }
+    ]
+
+    action = choose_action(FixedMovePolicy([10.0, 0.0, -10.0]), observation)
+
+    assert action["path"] == 8
+
+
 def test_units_prefer_the_clearer_route_when_model_scores_are_close():
     observation = sample_observation()
     observation["observation"]["battlefield"]["tiles"][2][3]["feature"] = "marsh"
